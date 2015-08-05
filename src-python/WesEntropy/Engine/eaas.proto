@@ -1,0 +1,86 @@
+// Copyright 2014-2015 Whitewood Encryption Systems, Inc.
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+  
+package wesentropy;
+
+message CommonHeader {
+    enum MessageType {
+        NOT_SET = 0;
+        CLIENT_HELLO = 1;
+        SERVER_HELLO = 2;
+        DATA_REQUEST = 3;
+        DATA_DELIVERY = 4;
+        STAT_REQUEST = 5;
+        STAT_DELIVERY = 6;
+        ERROR = 7;
+    }
+
+    required string magic = 1;
+    optional MessageType msg_type = 2;
+    optional uint64 msg_number = 3;
+    optional bytes hmac = 4;
+}
+
+message ClientHello {
+    optional string client_id = 1;
+    optional bytes nonce = 2;  // HMAC'ed, used for Diffie Hellman - G^X mod p
+}
+
+message ServerHello {
+    optional uint32 page_size = 1;
+    optional bytes nonce = 2;  // HMAC'ed, used for Diffie Hellman - G^Y mod p, the shared secret is the session id
+    optional bytes signature = 3;     // signature on both nonces
+}
+
+message DataRequest {
+    optional uint32 num_bytes = 1;
+}
+
+message DataDelivery {
+    optional bytes data = 1;
+}
+
+message StatRequest {
+}
+
+message StatDelivery {
+    message Source {
+        optional uint32 source_id = 1;
+        optional uint64 source_bytes = 2;
+    }
+    
+    message Sink {
+        optional uint32 sink_id = 1;
+        optional uint64 sink_bytes = 2;
+    }
+    
+    repeated Source sources = 2;
+    repeated Sink sinks = 3;
+}
+
+message Error {
+    optional uint32 errno = 1;
+    optional string error_msg = 2;
+}
+
+message WesMessage {
+    required CommonHeader header = 1;
+    optional ClientHello client_hello = 2;
+    optional ServerHello server_hello = 3;
+    optional DataRequest data_request = 4;
+    optional DataDelivery data_delivery = 5;
+    optional StatRequest stat_request = 6;
+    optional StatDelivery stat_delivery = 7;
+    optional Error error = 8;
+}

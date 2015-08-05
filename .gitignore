@@ -1,0 +1,8 @@
+*.o
+*.a
+*.exp
+*.so
+
+eaas_pb2.py
+
+src-c/wesqrngd/wesqrngd

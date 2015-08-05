@@ -1,0 +1,12 @@
+openssl_conf = openssl_def
+
+[openssl_def]
+engines = engine_section
+
+[engine_section]
+ewes = ewes_section
+
+[ewes_section]
+engine_id = ewes
+dynamic_path = /path/to/ewes/libewes.so
+default_algorithms = RAND

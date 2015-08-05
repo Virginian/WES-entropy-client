@@ -1,0 +1,72 @@
+# Copyright 2014-2015 Whitewood Encryption Systems, Inc.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+SHELL=          /bin/bash
+PACKAGE=		libwesentropy
+
+LIBNAME=		libwesentropy
+SRCS=			wesentropy.c
+OBJS=			wesentropy.o
+HEADERS=		vendor/wesengine.h
+EXTRA=			Makefile.wesentropy
+INCLUDE_PATH=	-I../headers -I/usr/include/python2.7
+PYTHON_LIBDIR=  $(shell if [[ -d /usr/lib/python2.7/lib-dynload ]]; then echo /usr/lib/python2.7/lib-dynload; else echo /usr/lib64/python2.7/lib-dynload; fi)
+
+CC=		gcc
+PIC=	-fPIC
+CFLAGS=	-g -std=c99 -pedantic -Wall -Werror $(PIC) $(INCLUDE_PATH)
+AR=		ar r
+RANLIB=	ranlib
+
+LIB=	$(LIBNAME).a
+SHLIB=	$(LIBNAME).so
+
+all:	$(SHLIB)
+
+clean:
+	rm -f *.a *.exp *.o *.so
+	
+%.o: %.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(LIB):		$(OBJS)
+		$(AR) $(LIB) $(OBJS)
+		- $(RANLIB) $(LIB)
+
+LINK_SO=	\
+  ld -r -o $(LIBNAME).o $$ALLSYMSFLAGS $(LIB) && \
+  (nm -Pg $(LIBNAME).o | grep ' [BDT] ' | cut -f1 -d' ' > $(LIBNAME).exp; \
+   $$SHAREDCMD $$SHAREDFLAGS -o $(SHLIB) $(LIBNAME).o -lc -lpython2.7 \
+   $(PYTHON_LIBDIR)/datetime.so)
+
+$(SHLIB):	$(LIB)
+		ALLSYMSFLAGS='--whole-archive' \
+		SHAREDFLAGS='-shared -Wl,-soname=$(SHLIB)' \
+		SHAREDCMD='$(CC)'; \
+		$(LINK_SO)
+
+ifneq "$(VERSION)" ""
+PACKAGEVERSION=	$(PACKAGE)-$(VERSION)
+else
+PACKAGEVERSION=	$(PACKAGE)
+endif
+
+package:
+		tar -cf - $(SRCS) $(HEADERS) $(EXTRA) \
+		    | tardy -prefix $(PACKAGEVERSION) - $(PACKAGEVERSION).tar.gz
+
+depend:
+		gcc -MM -MF wesentropy.d $(CFLAGS) $(SRCS)
+
+sinclude wesentropy.d
